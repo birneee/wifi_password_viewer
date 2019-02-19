@@ -1,4 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:core';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:math';
+
+const accentColor = Colors.red;
 
 void main() => runApp(MyApp());
 
@@ -7,10 +14,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'WiFi'),
     );
   }
 }
@@ -25,39 +33,83 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  static const platform =
+      const MethodChannel('tk.birneee.wifipasswordviewer/wifi');
+  List<Wifi> _wifis = [];
+  ScrollController _scrollController;
+  double _appBarElevation = 1.0;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  Future<void> _updateWifis() async {
+    try {
+      var result = (await platform.invokeMethod("getWifis"));
+      var wifis = List<Wifi>.from(json
+          .decode(result)
+          .map((i) => new Wifi(i["ssid"], i["password"]))
+          .toList());
+      setState(() {
+        _wifis = wifis;
+      });
+    } on PlatformException catch (e) {}
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _updateWifis());
+  }
+
+  _scrollListener(){
+    double elevation = (_scrollController.offset - _scrollController.position.minScrollExtent).abs() / 10.0;
+    elevation = elevation - elevation % 0.1;
+    elevation = min(elevation, 2.0);
+    if(elevation != _appBarElevation) {
+      setState(() {
+        _appBarElevation = elevation;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Center(child: Text(widget.title, style: TextStyle(color: Colors.grey))),
+        backgroundColor: Colors.white,
+        elevation: _appBarElevation,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ),
+      body: RefreshIndicator(
+          child: ListView.builder(
+            physics: BouncingScrollPhysics(),
+            controller: _scrollController,
+            itemCount: _wifis.length,
+            itemBuilder: (context, index) => ListTile(
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 30.0, vertical: 4.0),
+                  leading: Icon(
+                    Icons.network_wifi,
+                    color: accentColor,
+                  ),
+                  title: Text(_wifis[index].ssid),
+                  subtitle: Text(_wifis[index].password),
+                ),
+          ),
+          onRefresh: _updateWifis),
     );
+  }
+}
+
+class Wifi {
+  final String ssid;
+  final String password;
+
+  Wifi(this.ssid, this.password);
+
+  @override
+  String toString() {
+    return '$ssid $password';
   }
 }
