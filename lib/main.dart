@@ -37,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static const platform =
       const MethodChannel('tk.birneee.wifipasswordviewer/wifi');
   List<Wifi> _wifis = [];
+  String _connectedWifi;
   ScrollController _scrollController;
   double _appBarElevation = 0.0;
 
@@ -47,8 +48,10 @@ class _MyHomePageState extends State<MyHomePage> {
           .decode(result)
           .map((i) => new Wifi(i["ssid"], i["password"]))
           .toList());
+      var connectedWifi = (await platform.invokeMethod("getConnectedWifi"));
       setState(() {
         _wifis = wifis;
+        _connectedWifi = connectedWifi;
       });
     } on PlatformException catch (e) {}
   }
@@ -95,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       EdgeInsets.symmetric(horizontal: 30.0, vertical: 4.0),
                   leading: Icon(
                     Icons.network_wifi,
-                    color: accentColor,
+                    color: _connectedWifi == _wifis[index].ssid ? Colors.orange : accentColor,
                   ),
                   title: Text(_wifis[index].ssid),
                   subtitle: Text(_wifis[index].password),

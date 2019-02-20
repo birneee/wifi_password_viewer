@@ -2,13 +2,13 @@ package birneee.wifipasswordviewer.utils
 
 import eu.chainfire.libsuperuser.Shell
 
-private val FILE_WIFI_CONFIG_STORE = "/data/misc/wifi/WifiConfigStore.xml"
+private val FILE_PATH = "/data/misc/wifi/WifiConfigStore.xml"
 
 class WifiConfigStoreXmlReader : WifiStoreReader {
 
     override fun read(): List<Wifi> {
         if(Shell.SU.available()){
-            val xml = Shell.SU.run("cat $FILE_WIFI_CONFIG_STORE").joinToString("\n")
+            val xml = Shell.SU.run("cat $FILE_PATH").joinToString("\n")
             return parseXml(xml)
         }
         else {
@@ -17,13 +17,7 @@ class WifiConfigStoreXmlReader : WifiStoreReader {
     }
 
     fun parseXml(xml: String) : List<Wifi>{
-        return xml.parseXml()
-                .firstChildByTag("WifiConfigStoreData")!!
-                .firstChildByTag("NetworkList")!!
-                .childNodeList
-                .filterByTag("Network")
-                .flatMapChildNodes()
-                .filterByTag("WifiConfiguration")
+        return xml.xpath("/WifiConfigStoreData/NetworkList/Network/WifiConfiguration")
                 .map {
 
                     Wifi(
