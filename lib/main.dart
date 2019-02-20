@@ -16,7 +16,8 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        fontFamily: 'Manrope',
+        primarySwatch: accentColor,
       ),
       home: MyHomePage(title: 'WiFi'),
     );
@@ -37,7 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
       const MethodChannel('tk.birneee.wifipasswordviewer/wifi');
   List<Wifi> _wifis = [];
   ScrollController _scrollController;
-  double _appBarElevation = 1.0;
+  double _appBarElevation = 0.0;
 
   Future<void> _updateWifis() async {
     try {
@@ -82,7 +83,10 @@ class _MyHomePageState extends State<MyHomePage> {
         elevation: _appBarElevation,
       ),
       body: RefreshIndicator(
-          child: ListView.builder(
+          color: accentColor,
+          child: Scrollbar(
+            child:
+              ListView.builder(
             physics: BouncingScrollPhysics(),
             controller: _scrollController,
             itemCount: _wifis.length,
@@ -96,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   title: Text(_wifis[index].ssid),
                   subtitle: Text(_wifis[index].password),
                 ),
-          ),
+          )),
           onRefresh: _updateWifis),
     );
   }

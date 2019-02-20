@@ -3,6 +3,8 @@ package birneee.wifipasswordviewer
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import birneee.wifipasswordviewer.utils.Wifi
+import birneee.wifipasswordviewer.utils.WifiStoreReader
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.flutter.app.FlutterActivity
 import io.flutter.plugin.common.MethodChannel
@@ -29,7 +31,7 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 METHOD_GET_WIFIS -> {
                     try {
-                        val wifis = getRandomWifis(100).toJson()
+                        val wifis = getWifis().toJson()
                         result.success(wifis)
                     } catch (e: Exception) {
                         result.error("UNKNOWN", "An unknown error occured", null)
@@ -45,16 +47,11 @@ private fun getRandomWifis(count: Int): List<Wifi> {
     return (1..count).map { Wifi(randomString(10), randomString(20)) }
 }
 
+
+
 private fun getWifis(): List<Wifi> {
-    return listOf(
-            Wifi("wifi1", "blub"),
-            Wifi("wifi2", "123")
-    )
+    return  getRandomWifis(20) + WifiStoreReader.getInstance().read()
 }
-
-data class Wifi(val ssid: String, val password: String)
-
-fun <T> List<T>.toArrayList() = ArrayList<T>(this)
 
 fun <T> List<T>.toJson(): String = jacksonObjectMapper().writeValueAsString(this)
 
