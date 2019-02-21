@@ -19,7 +19,6 @@ class WifiConfigStoreXmlReader : WifiStoreReader {
     fun parseXml(xml: String) : List<Wifi>{
         return xml.xpath("/WifiConfigStoreData/NetworkList/Network/WifiConfiguration")
                 .map {
-
                     Wifi(
                             it.firstChildByAttribute("name","SSID")?.textContent?.trim('\"').orEmpty(),
                             it.firstChildByAttribute("name","PreSharedKey")?.textContent?.trim('\"').orEmpty()

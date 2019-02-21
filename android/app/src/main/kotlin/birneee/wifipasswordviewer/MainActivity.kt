@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.view.View
 import birneee.wifipasswordviewer.utils.Wifi
 import birneee.wifipasswordviewer.utils.WifiStoreReader
 import birneee.wifipasswordviewer.utils.getCurrentSsid
@@ -16,6 +15,7 @@ import io.flutter.plugins.GeneratedPluginRegistrant
 
 private const val CHANNEL_WIFI = "tk.birneee.wifipasswordviewer/wifi"
 private const val METHOD_GET_WIFIS = "getWifis"
+private const val METHOD_GET_TEST_WIFIS = "getTestWifis"
 private const val METHOD_GET_CONNECTED_WIFI = "getConnectedWifi"
 
 class MainActivity : FlutterActivity() {
@@ -32,9 +32,9 @@ class MainActivity : FlutterActivity() {
         GeneratedPluginRegistrant.registerWith(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             window.statusBarColor = getColor(R.color.transparent)
-            var flags = flutterView.systemUiVisibility
+            /*var flags = flutterView.systemUiVisibility
             flags = flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            flutterView.systemUiVisibility = flags
+            flutterView.systemUiVisibility = flags*/
         }
 
         MethodChannel(flutterView, CHANNEL_WIFI).setMethodCallHandler { call, result ->
@@ -42,6 +42,14 @@ class MainActivity : FlutterActivity() {
                 METHOD_GET_WIFIS -> {
                     try {
                         val wifis = getWifis().toJson()
+                        result.success(wifis)
+                    } catch (e: Exception) {
+                        result.error("UNKNOWN", "An unknown error occurred", null)
+                    }
+                }
+                METHOD_GET_TEST_WIFIS -> {
+                    try {
+                        val wifis = getRandomWifis(20).toJson()
                         result.success(wifis)
                     } catch (e: Exception) {
                         result.error("UNKNOWN", "An unknown error occurred", null)
@@ -58,13 +66,11 @@ class MainActivity : FlutterActivity() {
 }
 
 private fun getRandomWifis(count: Int): List<Wifi> {
-    return (1..count).map { Wifi(randomString(10), randomString(20)) }
+    return (1..count).map { Wifi(randomString(10), randomString(20)) }.sortedBy { it.ssid }
 }
 
-
-
 private fun getWifis(): List<Wifi> {
-    return  getRandomWifis(20) + WifiStoreReader.getInstance().read()
+    return WifiStoreReader.getInstance().read().sortedBy { it.ssid }
 }
 
 fun <T> List<T>.toJson(): String = jacksonObjectMapper().writeValueAsString(this)
