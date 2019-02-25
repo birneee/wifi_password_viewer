@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
-import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
+import 'wifibridge.dart' as wifi;
+import 'systemthemebridge.dart' as systemtheme;
 
 const PROPERTY_DARKMODE = "darkmode";
 const PROPERTY_TESTDATA = "testdata";
@@ -40,9 +40,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const platform =
-      const MethodChannel('tk.birneee.wifipasswordviewer/wifi');
-  List<Wifi> _wifis = [];
+  List<wifi.Wifi> _wifis = [];
   String _connectedWifi;
   ScrollController _scrollController;
   double _appBarElevation = 0.0;
@@ -55,14 +53,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _updateWifis() async {
     try {
-      var result = _testdata
-          ? (await platform.invokeMethod("getTestWifis"))
-          : (await platform.invokeMethod("getWifis"));
-      var wifis = List<Wifi>.from(json
-          .decode(result)
-          .map((i) => new Wifi(i["ssid"], i["password"]))
-          .toList());
-      var connectedWifi = (await platform.invokeMethod("getConnectedWifi"));
+      var wifis = _testdata ? await wifi.getTestWifis() : await wifi.getWifis();
+      var connectedWifi = await wifi.getConnectedWifiSSID();
       setState(() {
         _wifis = wifis;
         _connectedWifi = connectedWifi;
@@ -76,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var testdata =
         (await SharedPreferences.getInstance()).getBool(PROPERTY_TESTDATA);
 
-    _updateStatusBarColor();
+    _updateSystemTheme();
 
     setState(() {
       _darkmode = darkmode;
@@ -84,16 +76,19 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> _updateStatusBarColor() {
-    return FlutterStatusbarcolor.setStatusBarWhiteForeground(
-        _darkmode ? true : false);
+  Future<void> _updateSystemTheme() {
+    if (_darkmode) {
+      systemtheme.setDarkTheme();
+    } else {
+      systemtheme.setLightTheme();
+    }
   }
 
   Future<bool> setDarkmode(bool darkmode) {
     setState(() {
       _darkmode = darkmode;
     });
-    _updateStatusBarColor();
+    _updateSystemTheme();
     return SharedPreferences.getInstance().then(
         (SharedPreferences pref) => pref.setBool(PROPERTY_DARKMODE, darkmode));
   }
@@ -114,9 +109,8 @@ class _MyHomePageState extends State<MyHomePage> {
     _scrollController.addListener(_scrollListener);
     _updateProperties()
         .then((_) => _updateWifis())
-        .then((_) => _updateStatusBarColor());
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _updateStatusBarColor());
+        .then((_) => _updateSystemTheme());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateSystemTheme());
   }
 
   _scrollListener() {
@@ -180,7 +174,8 @@ class _MyHomePageState extends State<MyHomePage> {
               color: ACCENT_COLOR,
               child: Scrollbar(
                   child: ListView.builder(
-                physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                physics: AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
                 controller: _scrollController,
                 itemCount: _wifis.length,
                 itemBuilder: (context, index) => ListTile(
@@ -193,22 +188,18 @@ class _MyHomePageState extends State<MyHomePage> {
                             : ACCENT_COLOR,
                       ),
                       title: Text(_wifis[index].ssid),
-                      subtitle: Text(_wifis[index].password),
+                      subtitle: Text(_wifis[index].password,
+                          style: TextStyle(color: Colors.grey)),
+                      onLongPress: () {
+                        Clipboard.setData(
+                            new ClipboardData(text: _wifis[index].password));
+                        Scaffold.of(context).showSnackBar(new SnackBar(
+                          content: new Text("Copied Password to Clipboard"),
+                        ));
+                      },
                     ),
               )),
               onRefresh: _updateWifis),
         ));
-  }
-}
-
-class Wifi {
-  final String ssid;
-  final String password;
-
-  Wifi(this.ssid, this.password);
-
-  @override
-  String toString() {
-    return '$ssid $password';
   }
 }
