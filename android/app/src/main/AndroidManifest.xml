@@ -8,7 +8,7 @@
 
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="wifi_password_viewer"
+        android:label="Wifi"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
