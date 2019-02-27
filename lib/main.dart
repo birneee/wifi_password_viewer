@@ -5,15 +5,26 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
 import 'wifibridge.dart' as wifi;
 import 'systemthemebridge.dart' as systemtheme;
 import 'wifiqrcodebuilder.dart' as wifiqrcode;
 
+const APP_BAR_ACTION_REFRESH = "refresh";
 const PROPERTY_DARKMODE = "darkmode";
 const PROPERTY_TESTDATA = "testdata";
 
-const Color ACCENT_COLOR = Color(0xFF2196F3);
-const Color CONNECTED_WIFI_COLOR = Color(0xFF4CAF50);
+const Color PRIMARY = Color(0xff880e4f);
+const Color PRIMARY_LIGHT = Color(0xffbc477b);
+const Color PRIMARY_DARK = Color(0xff560027);
+
+const Color SECONDARY = Color(0xff004d40);
+const Color SECONDARY_LIGHT = Color(0xff39796b);
+const Color SECONDARY_DARK = Color(0xff00251a);
+
+const Color ACCENT_COLOR = PRIMARY;
+const Color CONNECTED_WIFI_COLOR = SECONDARY_LIGHT;
 
 void main() => runApp(MyApp());
 
@@ -26,6 +37,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: 'Manrope',
         primarySwatch: Colors.blue,
+        dialogTheme: DialogTheme(
+          backgroundColor: Colors.white
+        ),
       ),
       home: MyHomePage(title: 'WiFi'),
     );
@@ -131,6 +145,12 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  _copyPasswordToClipboard(String password){
+    Clipboard.setData(
+        new ClipboardData(text: password));
+    Fluttertoast.showToast(msg: "Copied Password to Clipboard");
+  }
+
   void _onListTap(DragDownDetails details) {
     _latestTapPosition = details.globalPosition;
     if (_showPasswordAtPos != -1) {
@@ -165,11 +185,7 @@ class _MyHomePageState extends State<MyHomePage> {
         .then<void>((int item) {
       switch (item) {
         case CONTEXT_MENU_COPY_PASSWORD:
-          Clipboard.setData(
-              new ClipboardData(text: _wifis[wifiIndex].password));
-          Scaffold.of(context).showSnackBar(new SnackBar(
-            content: new Text("Copied Password to Clipboard"),
-          ));
+          _copyPasswordToClipboard(_wifis[wifiIndex].password);
           break;
         case CONTEXT_MENU_SHOW_PASSWORD:
           setState(() {
@@ -181,11 +197,15 @@ class _MyHomePageState extends State<MyHomePage> {
               context: context,
               builder: (builderContext) {
                 return AlertDialog(
+                    contentPadding: EdgeInsets.fromLTRB(20, 20, 20, 16),
                     content: Container(
                         width: 300.0,
                         height: 300.0,
                         child: QrImage(
-                          data: wifiqrcode.build(_wifis[wifiIndex].ssid, _wifis[wifiIndex].password, wifiqrcode.AUTHENTICATION_WPA),
+                          data: wifiqrcode.build(
+                              _wifis[wifiIndex].ssid,
+                              _wifis[wifiIndex].password,
+                              wifiqrcode.AUTHENTICATION_WPA),
                           size: 300.0,
                         )));
               });
@@ -194,8 +214,10 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  _selectMenuItem(String item) {
-    if (item == PROPERTY_TESTDATA) {
+  _selectAppBarMenuItem(String item) {
+    if (item == APP_BAR_ACTION_REFRESH) {
+      _updateWifis();
+    } else if (item == PROPERTY_TESTDATA) {
       setTestdata(!_testdata);
     } else if (item == PROPERTY_DARKMODE) {
       setDarkmode(!_darkmode);
@@ -215,8 +237,10 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: <Widget>[
           PopupMenuButton<String>(
               offset: Offset(0.0, 10.0),
-              onSelected: _selectMenuItem,
+              onSelected: _selectAppBarMenuItem,
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    PopupMenuItem<String>(
+                        value: APP_BAR_ACTION_REFRESH, child: Text("Refresh")),
                     PopupMenuItem<String>(
                         value: PROPERTY_TESTDATA,
                         child: _testdata
@@ -256,11 +280,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         style: TextStyle(color: Colors.grey)),
                     onTap: () => _showContextMenu(context, index),
                     onLongPress: () {
-                      Clipboard.setData(
-                          new ClipboardData(text: _wifis[index].password));
-                      Scaffold.of(context).showSnackBar(new SnackBar(
-                        content: new Text("Copied Password to Clipboard"),
-                      ));
+                      _copyPasswordToClipboard(_wifis[index].password);
                     },
                   ),
             )),
