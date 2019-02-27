@@ -37,9 +37,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: 'Manrope',
         primarySwatch: Colors.blue,
-        dialogTheme: DialogTheme(
-          backgroundColor: Colors.white
-        ),
+        dialogTheme: DialogTheme(backgroundColor: Colors.white),
       ),
       home: MyHomePage(title: 'WiFi'),
     );
@@ -145,9 +143,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  _copyPasswordToClipboard(String password){
-    Clipboard.setData(
-        new ClipboardData(text: password));
+  _copyPasswordToClipboard(String password) {
+    Clipboard.setData(new ClipboardData(text: password));
     Fluttertoast.showToast(msg: "Copied Password to Clipboard");
   }
 
@@ -197,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
               context: context,
               builder: (builderContext) {
                 return AlertDialog(
-                    contentPadding: EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    contentPadding: EdgeInsets.fromLTRB(20, 20, 20, 13),
                     content: Container(
                         width: 300.0,
                         height: 300.0,
@@ -274,9 +271,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     title: Text(_wifis[index].ssid),
                     subtitle: Text(
-                        _showPasswordAtPos == index
-                            ? _wifis[index].password
-                            : mask(_wifis[index].password),
+                        _getPasswordText(_wifis[index].password,
+                            _showPasswordAtPos != index),
                         style: TextStyle(color: Colors.grey)),
                     onTap: () => _showContextMenu(context, index),
                     onLongPress: () {
@@ -291,6 +287,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-mask(String string) {
-  return string.replaceAll(RegExp("."), "●");
+_getPasswordText(String password, bool mask) {
+  if (password == null || password.isEmpty) {
+    return "no password";
+  } else if (mask) {
+    return password.replaceAll(RegExp("."), "●");
+  } else {
+    return password;
+  }
 }
