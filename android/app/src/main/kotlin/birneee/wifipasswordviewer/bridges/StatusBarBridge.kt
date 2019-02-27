@@ -42,7 +42,7 @@ private fun FlutterActivity.setDarkTheme(){
     }
     this.flutterView.systemUiVisibility = flags
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        this.window.statusBarColor = resources.getColor(R.color.black)
+        this.window.statusBarColor = resources.getColor(R.color.transparent)
         this.window.navigationBarColor = resources.getColor(R.color.black)
     }
 }
@@ -57,7 +57,7 @@ private fun FlutterActivity.setLightTheme(){
     }
     this.flutterView.systemUiVisibility = flags
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        this.window.statusBarColor = resources.getColor(R.color.white)
+        this.window.statusBarColor = resources.getColor(R.color.transparent)
         this.window.navigationBarColor = resources.getColor(R.color.white)
     }
 }
